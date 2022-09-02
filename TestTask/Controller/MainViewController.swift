@@ -63,12 +63,16 @@ extension MainViewController {
 extension MainViewController {
     
     @IBAction func addToFavourite(_ sender: Any) {
-        let isValid = listOfFavouriteMovieViewModel.textFieldIsEmpty(titleTextField: titleTextField.text ?? "", yearTextField: yearTextField.text ?? "")
+        
+        guard let title = titleTextField.text, let year = yearTextField.text else { return }
+        
+        let isValid = listOfFavouriteMovieViewModel.textFieldIsEmpty(titleTextField: title, yearTextField: year)
+        
         if isValid {
-            if listOfFavouriteMovieViewModel.checkIfContains(name: titleTextField.text ?? "") {
-                listOfFavouriteMovieViewModel.saveFav(name: titleTextField.text ?? "", year: yearTextField.text ?? "")
+            if listOfFavouriteMovieViewModel.checkIfContains(name: title, year : year) {
+                listOfFavouriteMovieViewModel.saveFav(name: titleTextField.text ?? "", year: year)
                 listOfFavouriteMovieViewModel = fetchFav()
-                self.tableView.reloadData()
+                reloadTableView()
                 titleTextField.text = ""
                 yearTextField.text = ""
             } else {
@@ -81,11 +85,19 @@ extension MainViewController {
                 print("")
             }
         }
-        
     }
-    
-    
-    
+}
+
+
+//MARK: - reload tableView
+extension MainViewController {
+    func reloadTableView() {
+        tableView.beginUpdates()
+        let rowIndex = listOfFavouriteMovieViewModel.numberOfRowInSection(0) - 1
+        let indexPath: IndexPath = IndexPath(row: rowIndex, section: 0)
+        tableView.insertRows(at: [indexPath], with: .fade)
+        tableView.endUpdates()
+    }
 }
 
 //MARK: - Fetch from DB
@@ -105,6 +117,7 @@ extension MainViewController {
 extension MainViewController : UITextFieldDelegate {
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+
         if textField == titleTextField {
             let allowedCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
             let allowedCharacterSet = CharacterSet(charactersIn: allowedCharacters)
@@ -126,7 +139,7 @@ extension MainViewController : UITableViewDataSource, UITableViewDelegate {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "favCell", for: indexPath) as? FavCell else { fatalError(" fav movie cell not found") }
         let vm = listOfFavouriteMovieViewModel?.articleAtIndex(indexPath.row)
         guard let viewModel = vm else { fatalError() }
-        var nameAndYearWithFonts = changeFont(title: viewModel.name, year: String(viewModel.year))
+        let nameAndYearWithFonts = changeFont(title: viewModel.name, year: String(viewModel.year))
         cell.favMovieLabel.attributedText =  nameAndYearWithFonts
         return cell
     }
@@ -139,5 +152,14 @@ extension MainViewController : UITableViewDataSource, UITableViewDelegate {
         return listOfFavouriteMovieViewModel?.numberOfSections ?? 0
     }
     
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        guard let faMoviewList = fav else { fatalError() }
+        if editingStyle == .delete {
+            realm.beginWrite()
+            realm.delete(faMoviewList[indexPath.row])
+            try! realm.commitWrite()
+         }
+        self.tableView.deleteRows(at: [indexPath], with: .left)
+    }
     
 }

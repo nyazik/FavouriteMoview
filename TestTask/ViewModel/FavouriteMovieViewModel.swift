@@ -88,11 +88,13 @@ extension ListOfFavouriteMovieViewModel {
 //MARK: - check if value already saved to DB
 extension ListOfFavouriteMovieViewModel {
     
-    func checkIfContains( name : String) -> Bool {
+    func checkIfContains( name : String, year : String) -> Bool {
+        let intYearValue = Int(year)
+        guard let yearValue = intYearValue else { fatalError() }
         var returnValue = false
         if listOfFavouriteMoviewModel.count > 0 {
             for fav in listOfFavouriteMoviewModel {
-                if fav.name.contains(name) {
+                if fav.name.contains(name) && fav.year == yearValue {
                     returnValue = false
                 } else {
                     returnValue =  true
@@ -102,6 +104,7 @@ extension ListOfFavouriteMovieViewModel {
             returnValue = true
         }
         return returnValue
+        
     }
     
 }
